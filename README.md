@@ -20,12 +20,21 @@ Open [localhost:4022](http://localhost:4022). No wallet, API key, facilitator pr
 - **Seven task families:** invoice extraction, code behavior, summarization, translation, product copy, research recommendations, and an acceptance contract.
 - **Real deterministic checks:** JSON parsing, strict schema validation, source/reference comparison, length and quantity constraints, and buyer-owned test vectors for a bounded operation language. The code example does not execute arbitrary JavaScript.
 - **Subjective evaluation:** labeled, authored example judgments for semantic tasks; an optional live Anthropic single-model adapter. Edited subjective text without a live evaluator is held, not given a fabricated score.
+- **Judge pacing:** immediate deterministic checks, an 8-second single-judge example, a 10-second concurrent panel, or a 16-second initial judge plus escalation. A visible elapsed timer accompanies the server-enforced wait before issuing a receipt.
 - **Stepped policies:** deterministic-only, single judge, illustrative multi-judge consensus, uncertainty escalation, and optimistic dispute windows. Hard failures cannot be overridden by a high average score.
 - **Payment gate:** the server binds a receipt to the task, exact artifact, policy, amount, network, and expiry. It blocks tampering, early release, rejected/held/disputed payments, and repeated releases within the same process.
 - **Review and recourse:** a 20-second simulated challenge window and explicitly labeled reviewer role-play. A dispute freezes payment before release. Bond amounts are illustrative; none are collected.
 - **Research reference:** 15 approaches across work quality, identity/provenance/trust, and timing, with implementation status and limits. Includes a verification-cost calculator and interview walkthrough.
 
 The demo is a **Solana devnet simulation**. The active API rejects other networks. No funds move, no transaction is broadcast, no escrow is deployed, and the simulated payment ID is never presented as an explorer transaction.
+
+## Timing in the demo
+
+The public examples model the seconds-long latency discussed in the research. Their fixed 8/10/16-second delays are **illustrative presentation assumptions**, not measured provider latency, calibrated predictions, or an SLA. The concurrent panel waits for all judges in one modeled round; stepped escalation adds a second round. Invalid inputs, deterministic tasks, schema-only checks, and edited output without an authored judgment have no artificial delay.
+
+The server waits before issuing any release-capable receipt. The full 20-second optimistic challenge window starts after evaluation. Canceling or leaving the workbench aborts the verification request and prevents the browser from requesting release. Receipts record elapsed server verification time and whether it includes a modeled delay; this excludes browser/network overhead and settlement. The progress timer measures browser waiting time and may be longer.
+
+The optional live adapter adds **no artificial delay**: it waits for the complete response, validates the rubric, and records actual elapsed verification time. Real latency depends on the model, input/output length, and infrastructure; see [Anthropic's latency guidance](https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-latency). A first token is not a validated verdict. No live-provider latency benchmark was performed for this demo.
 
 ## Important boundaries
 
@@ -67,16 +76,16 @@ flowchart LR
   W -->|Uncontested deadline| P
 ```
 
-| Path | Responsibility |
-|---|---|
-| `apps/dashboard/components/lab` | Workbench, flow, receipt, reference guide, economics |
-| `apps/dashboard/lib/verification` | Task contracts, deterministic checks, judge policies, live adapter, demo ledger |
-| `apps/dashboard/app/api/lab` | Validated verify/settle commands in one server route |
-| `apps/dashboard/app/testnet` | Solana-only integration status and requirements |
-| `apps/dashboard/app/archive/base-sepolia` | Historical wallet dashboard, with isolated wallet providers |
-| `apps/facilitator` | Original Express proxy and summarization judge; unverified settlement blocked by default |
-| `apps/demo-service` | Original paid weather and summary endpoints |
-| `apps/buyer-agent`, `packages/agent-pay` | Original Base Sepolia buyer tooling |
+| Path                                      | Responsibility                                                                           |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `apps/dashboard/components/lab`           | Workbench, flow, receipt, reference guide, economics                                     |
+| `apps/dashboard/lib/verification`         | Task contracts, deterministic checks, judge policies, live adapter, demo ledger          |
+| `apps/dashboard/app/api/lab`              | Validated verify/settle commands in one server route                                     |
+| `apps/dashboard/app/testnet`              | Solana-only integration status and requirements                                          |
+| `apps/dashboard/app/archive/base-sepolia` | Historical wallet dashboard, with isolated wallet providers                              |
+| `apps/facilitator`                        | Original Express proxy and summarization judge; unverified settlement blocked by default |
+| `apps/demo-service`                       | Original paid weather and summary endpoints                                              |
+| `apps/buyer-agent`, `packages/agent-pay`  | Original Base Sepolia buyer tooling                                                      |
 
 ## Archived Base Sepolia path
 
@@ -92,11 +101,11 @@ Open `/archive/base-sepolia`. The archived baseline settlement route is restrict
 
 Recorded transactions from April 23, 2026 (historical repository evidence; not rerun for this demo):
 
-| Milestone | Transaction |
-|---|---|
-| First baseline | [0xc105…0c4f](https://sepolia.basescan.org/tx/0xc105ed89ed040dda01a7687dd12ba5b55782b38c3da4599e638d21e4a0ee0c4f) |
-| Facilitator as middleman | [0x15d2…27c5c](https://sepolia.basescan.org/tx/0x15d2a919fa77b368be9f062b4f3028d1df41edf75e0c81ba54e1dbda3db27c5c) |
-| Dashboard-triggered | [0xfbe3…cd4e5](https://sepolia.basescan.org/tx/0xfbe369e796f6e6c66a936039feae77b731e9f0a82d6c51871eb23aa71decd4e5) |
+| Milestone                 | Transaction                                                                                                        |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| First baseline            | [0xc105…0c4f](https://sepolia.basescan.org/tx/0xc105ed89ed040dda01a7687dd12ba5b55782b38c3da4599e638d21e4a0ee0c4f)  |
+| Facilitator as middleman  | [0x15d2…27c5c](https://sepolia.basescan.org/tx/0x15d2a919fa77b368be9f062b4f3028d1df41edf75e0c81ba54e1dbda3db27c5c) |
+| Dashboard-triggered       | [0xfbe3…cd4e5](https://sepolia.basescan.org/tx/0xfbe369e796f6e6c66a936039feae77b731e9f0a82d6c51871eb23aa71decd4e5) |
 | Browser-verified baseline | [0x17de…d3744](https://sepolia.basescan.org/tx/0x17de059f92990c9832363fe9fa7b04d181898a3e680aa9d1ba75493f27ad3744) |
 
 ## Verify and present

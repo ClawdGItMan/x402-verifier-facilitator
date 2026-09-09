@@ -8,6 +8,7 @@ import {
 import { getScenario } from "../../../lib/verification/scenarios";
 import { DemoLedger } from "../../../lib/verification/receipts";
 import { runLiveJudge } from "../../../lib/verification/live-judge";
+import { runTimedVerification } from "../../../lib/verification/timed-verification";
 import { loadRootEnv } from "../agent/env";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -100,7 +101,6 @@ export async function POST(request: Request) {
         ),
         { headers: { "Cache-Control": "no-store" } },
       );
-    let judgment;
     if (body.request.judgeMode === "live") {
       if (!authorized(request))
         return Response.json(
@@ -110,18 +110,29 @@ export async function POST(request: Request) {
           },
           { status: 403 },
         );
-      const { checks } = deterministicChecks(body.request);
-      if (
-        getScenario(body.request.task).subjective &&
-        body.request.policy !== "schema" &&
-        checks.every((c) => c.status === "pass")
-      )
-        judgment = await runLiveJudge(body.request);
     }
-    const verification = evaluate(body.request, judgment);
-    return Response.json(ledger.issue(body.request, verification), {
-      headers: { "Cache-Control": "no-store" },
-    });
+    const { verification, timing } = await runTimedVerification(
+      body.request,
+      async () => {
+        let judgment;
+        const { checks } = deterministicChecks(body.request);
+        if (
+          body.request.judgeMode === "live" &&
+          getScenario(body.request.task).subjective &&
+          body.request.policy !== "schema" &&
+          checks.every((c) => c.status === "pass")
+        )
+          judgment = await runLiveJudge(body.request, request.signal);
+        return evaluate(body.request, judgment);
+      },
+      { signal: request.signal },
+    );
+    return Response.json(
+      ledger.issue(body.request, verification, Date.now(), timing),
+      {
+        headers: { "Cache-Control": "no-store" },
+      },
+    );
   } catch (error) {
     const message =
       error instanceof SyntaxError

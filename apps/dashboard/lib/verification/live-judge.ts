@@ -1,11 +1,16 @@
 import { judgmentSchema, type VerificationRequest } from "./engine";
 import { getScenario } from "./scenarios";
 
-export async function runLiveJudge(request: VerificationRequest) {
+export async function runLiveJudge(
+  request: VerificationRequest,
+  signal?: AbortSignal,
+) {
   const scenario = getScenario(request.task);
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    signal: AbortSignal.timeout(25000),
+    signal: signal
+      ? AbortSignal.any([signal, AbortSignal.timeout(25000)])
+      : AbortSignal.timeout(25000),
     headers: {
       "content-type": "application/json",
       "x-api-key": process.env.ANTHROPIC_API_KEY!,

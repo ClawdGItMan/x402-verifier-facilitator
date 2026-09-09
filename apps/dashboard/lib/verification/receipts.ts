@@ -6,6 +6,7 @@ import {
   timingSafeEqual,
 } from "node:crypto";
 import { canonical, type Evaluation, type VerificationRequest } from "./engine";
+import type { VerificationTiming } from "./timing";
 export type PaymentState =
   | "blocked"
   | "held"
@@ -22,6 +23,7 @@ export type Receipt = {
   expiresAt: number;
   notBefore: number;
   verification: Evaluation;
+  timing?: VerificationTiming;
   token: string;
   paymentState: PaymentState;
   amount: number;
@@ -45,6 +47,7 @@ export class DemoLedger {
     request: VerificationRequest,
     verification: Evaluation,
     now = Date.now(),
+    timing?: VerificationTiming,
   ): Receipt {
     for (const [id, r] of this.records)
       if (r.expiresAt <= now) this.records.delete(id);
@@ -66,6 +69,7 @@ export class DemoLedger {
       expiresAt: now + 600000,
       notBefore: request.policy === "optimistic" ? now + 20000 : now,
       verification,
+      timing,
       token: "",
       paymentState,
       amount: request.amount,

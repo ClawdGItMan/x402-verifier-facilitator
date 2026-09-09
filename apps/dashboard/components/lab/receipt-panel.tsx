@@ -9,6 +9,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import type { PaymentAction, Receipt } from "../../lib/verification/receipts";
+import { VerificationProgress, type Progress } from "./verification-progress";
 const labels = {
   blocked: "Payment blocked",
   held: "Held for review",
@@ -22,19 +23,26 @@ export function ReceiptPanel({
   receipt,
   busy,
   onAction,
+  progress,
+  onCancel,
 }: {
   receipt: Receipt | null;
   busy: boolean;
   onAction: (action: PaymentAction, reason: string) => void;
+  progress: Progress | null;
+  onCancel: () => void;
 }) {
   const [now, setNow] = useState(Date.now());
   const [reason, setReason] = useState("");
   useEffect(() => {
     if (receipt?.paymentState !== "challenge-window") return;
+    setNow(Date.now());
     const timer = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(timer);
-  }, [receipt?.paymentState]);
+  }, [receipt?.paymentState, receipt?.id]);
   useEffect(() => setReason(""), [receipt?.id]);
+  if (progress)
+    return <VerificationProgress progress={progress} onCancel={onCancel} />;
   if (!receipt)
     return (
       <div className="vf-receipt-empty">
@@ -54,7 +62,10 @@ export function ReceiptPanel({
       </div>
     );
   const { verification: v, paymentState: state } = receipt;
-  const seconds = Math.max(0, Math.ceil((receipt.notBefore - now) / 1000));
+  const seconds = Math.max(
+    0,
+    Math.ceil((receipt.notBefore - Math.max(now, receipt.issuedAt)) / 1000),
+  );
   const tone =
     state === "released" || state === "ready"
       ? "success"
@@ -107,6 +118,21 @@ export function ReceiptPanel({
         </strong>
       </div>
       <p className="vf-result-reason">{v.reason}</p>
+      {receipt.timing && (
+        <div className="vf-timing-result">
+          <strong>{(receipt.timing.elapsedMs / 1000).toFixed(2)}s</strong>
+          <span>
+            {receipt.timing.basis === "illustrative"
+              ? "Verification · includes simulated judge delay"
+              : "Verification · measured server time"}
+          </span>
+          <p>
+            {receipt.timing.basis === "illustrative"
+              ? `${receipt.timing.modeledMs / 1000}s illustrative pacing, not a provider benchmark. No live model call.`
+              : "Includes checks and any live provider wait; excludes browser/network and settlement time."}
+          </p>
+        </div>
+      )}
       <div className="vf-method">
         <span>{v.method}</span>
         <span className="vf-pill">

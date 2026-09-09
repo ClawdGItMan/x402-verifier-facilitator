@@ -2,7 +2,7 @@
 
 ## Automated
 
-- `pnpm test`: **48 passed, 0 failed**. Covers all seven task families, field/source disagreement, malformed schemas, extra fields, fractional code-test failures, edited subjective artifacts, instruction-injection holds, confidence/panel disagreement, exact rubric identities, unrounded thresholds, invalid model output, provider failure, authorization, request-size limits, receipt binding, tampering, expiry, replay, dispute deadlines, reviewer rationale, and terminal states.
+- `pnpm test`: **55 passed, 0 failed**. Covers all seven task families, field/source disagreement, malformed schemas, extra fields, fractional code-test failures, edited subjective artifacts, instruction-injection holds, confidence/panel disagreement, exact rubric identities, unrounded thresholds, invalid model output, provider failure, authorization, request-size limits, receipt binding, tampering, expiry, replay, dispute deadlines, reviewer rationale, and terminal states.
 - `pnpm typecheck`: **passed** across all six TypeScript project configurations.
 - `pnpm build`: **passed** with Next.js 16.2.4 and Webpack. Vercel's production build also completed successfully.
 - `git diff --check`: **passed**.
@@ -46,3 +46,13 @@ Screenshots and browser receipt are retained locally in `output/playwright/` (ig
 ## Solana-only follow-up
 
 The active API now rejects Base Sepolia and every network except `solana-devnet`. `/testnet` is the Solana integration-status page; the prior Base wallet view is archived at `/archive/base-sepolia`. The additional API boundary test passes for Base, EVM network IDs, mainnet and unrelated chains. Live Solana settlement is still an integration requirement, not an implemented claim.
+
+## Judge timing follow-up
+
+- Seven timing tests cover fast deterministic/rejected/unmatched paths, 8-second single-judge pacing, 10-second concurrent panels, 16-second stepped escalation, no release-capable receipt before completion, a full post-evaluation challenge window, actual live timing without padding, provider failure, and cancellation. Clocks are injected in unit tests; browser checks use real elapsed time.
+- Local browser receipts reported 8.01s for a single judge, 10.01s for a concurrent panel, and 16.00s for escalation. Browser wait includes additional request/render overhead.
+- The panel and escalation examples held payment; deterministic extraction released in 73ms of browser time.
+- The progress panel rendered at 1440px and 390px widths; mobile document width matched the viewport. Canceling returned to an editable workbench and allowed a fresh deterministic run without release from the canceled request.
+- The optimistic browser flow displayed a full 20-second countdown after its 8-second evaluation. Navigating away during another run issued only a verify request and no settlement request after the modeled deadline.
+- Independent review found no blocking issues in timing, cancellation, or the payment gate. A development-only Fast Refresh warning from changing a hook dependency list cleared on full reload; the fresh browser session had no console errors.
+- These are intentionally modeled fixture delays. No live-provider performance benchmark or Solana transaction was performed.

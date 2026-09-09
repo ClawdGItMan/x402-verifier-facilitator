@@ -60,7 +60,9 @@ export function Flow({
                   ? "Held for review"
                   : state === "refunded"
                     ? "Withheld after review"
-                    : "Waiting for verification",
+                    : running
+                      ? "Held during evaluation"
+                      : "Waiting for verification",
       badge: "04",
     },
   ];

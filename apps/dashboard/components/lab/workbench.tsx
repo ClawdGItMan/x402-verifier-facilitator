@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
   Check,
@@ -17,7 +17,12 @@ import {
   type TaskId,
   type Policy,
 } from "../../lib/verification/scenarios";
-import type { VerificationRequest } from "../../lib/verification/engine";
+import {
+  evaluate,
+  type VerificationRequest,
+} from "../../lib/verification/engine";
+import { timingPlan } from "../../lib/verification/timing";
+import type { Progress } from "./verification-progress";
 import type { PaymentAction, Receipt } from "../../lib/verification/receipts";
 import { ReceiptPanel } from "./receipt-panel";
 import { Flow } from "./flow";
@@ -33,6 +38,8 @@ export function Workbench() {
   const [amount, setAmount] = useState("0.05");
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<Progress | null>(null);
+  const pending = useRef<AbortController | null>(null);
   const [stage, setStage] = useState(0);
   const [error, setError] = useState("");
   const [history, setHistory] = useState<
@@ -48,8 +55,13 @@ export function Workbench() {
       .catch(() => {});
     const id = new URLSearchParams(window.location.search).get("task");
     if (scenarios.some((s) => s.id === id)) changeTask(id as TaskId);
+    return () => {
+      pending.current?.abort();
+      pending.current = null;
+    };
   }, []);
   function clear() {
+    setProgress(null);
     setReceipt(null);
     setStage(0);
     setError("");
@@ -81,7 +93,7 @@ export function Workbench() {
     amount: Number(amount),
     judgeMode: live ? "live" : "fixture",
   };
-  async function api(body: unknown): Promise<Receipt> {
+  async function api(body: unknown, signal?: AbortSignal): Promise<Receipt> {
     const response = await fetch("/api/lab", {
       method: "POST",
       headers: {
@@ -89,6 +101,7 @@ export function Workbench() {
         ...(live ? { authorization: `Bearer ${access}` } : {}),
       },
       body: JSON.stringify(body),
+      signal,
     });
     const data = await response.json();
     if (!response.ok)
@@ -96,21 +109,38 @@ export function Workbench() {
     return data;
   }
   async function run() {
+    if (pending.current) return;
+    const controller = new AbortController();
+    pending.current = controller;
     clear();
     setBusy(true);
-    setStage(1);
+    setStage(2);
+    setProgress({
+      plan: timingPlan(request, live ? undefined : evaluate(request)),
+      startedAt: performance.now(),
+    });
     try {
-      let result = await api({ operation: "verify", request });
+      let result = await api(
+        { operation: "verify", request },
+        controller.signal,
+      );
+      controller.signal.throwIfAborted();
       setStage(3);
+      setProgress(null);
+      setReceipt(result);
       if (result.paymentState === "ready")
-        result = await api({
-          operation: "settle",
-          request,
-          id: result.id,
-          token: result.token,
-          action: "release",
-          rationale: "",
-        });
+        result = await api(
+          {
+            operation: "settle",
+            request,
+            id: result.id,
+            token: result.token,
+            action: "release",
+            rationale: "",
+          },
+          controller.signal,
+        );
+      controller.signal.throwIfAborted();
       setReceipt(result);
       setStage(result.paymentState === "released" ? 4 : 3);
       setHistory((h) =>
@@ -124,6 +154,7 @@ export function Workbench() {
         ].slice(0, 6),
       );
     } catch (e) {
+      if (controller.signal.aborted) return;
       setError(
         e instanceof Error
           ? e.message
@@ -131,8 +162,19 @@ export function Workbench() {
       );
       setStage(0);
     } finally {
-      setBusy(false);
+      if (pending.current === controller) {
+        pending.current = null;
+        setProgress(null);
+        setBusy(false);
+      }
     }
+  }
+  function cancel() {
+    pending.current?.abort();
+    pending.current = null;
+    clear();
+    setBusy(false);
+    setError("Verification canceled. No payment release was requested.");
   }
   async function act(action: PaymentAction, rationale: string) {
     if (!receipt) return;
@@ -171,7 +213,7 @@ export function Workbench() {
   }
   return (
     <>
-      <Flow stage={stage} receipt={receipt} running={busy} />
+      <Flow stage={stage} receipt={receipt} running={!!progress} />
       <div className="vf-lab-toolbar">
         <div>
           <span className="vf-live-dot" /> Interactive workbench{" "}
@@ -368,6 +410,7 @@ export function Workbench() {
                     autoComplete="off"
                     placeholder="Demo access token"
                     value={access}
+                    disabled={busy}
                     onChange={(e) => setAccess(e.target.value)}
                   />
                 )}
@@ -412,7 +455,13 @@ export function Workbench() {
             <h2>The decision</h2>
             <span>Verifier</span>
           </header>
-          <ReceiptPanel receipt={receipt} busy={busy} onAction={act} />
+          <ReceiptPanel
+            receipt={receipt}
+            busy={busy}
+            onAction={act}
+            progress={progress}
+            onCancel={cancel}
+          />
         </section>
       </div>
       <div className="vf-underbench">
