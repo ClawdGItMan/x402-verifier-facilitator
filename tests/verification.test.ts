@@ -483,3 +483,20 @@ test("live adapter fails closed on provider errors, malformed JSON, or invented 
       runLiveJudge(request("summary", "good", { judgeMode: "live" })),
     );
 });
+
+test("the active API accepts only Solana devnet", async () => {
+  for (const network of [
+    "base-sepolia",
+    "eip155:84532",
+    "solana-mainnet",
+    "ethereum",
+  ]) {
+    const invalid = { ...request(), network };
+    assert.equal(requestSchema.safeParse(invalid).success, false);
+    assert.equal(
+      (await post({ operation: "verify", request: invalid })).status,
+      400,
+    );
+  }
+  assert.equal(requestSchema.safeParse(request()).success, true);
+});

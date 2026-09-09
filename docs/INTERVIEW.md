@@ -14,7 +14,7 @@ Open the public demo or run `pnpm dev:dashboard` and open http://localhost:4022.
 
 **1:20 — Recourse.** Select Invoice extraction → Correct extraction → Optimistic + dispute. Run, then enter a complaint and challenge within 20 seconds. Payment freezes. Open the human-review role-play, enter a rationale, approve, then release. “A dispute window needs a real hold or escrow design in production; it can't simply reverse a settled transfer.”
 
-**1:45 — Economics and Solana.** Use the cost calculator to compare a $0.02 judgment on a $0.001 task and a $10 task. “The acceptance layer should use the cheapest sufficient evidence. It can sit above different rails. My existing chain integration was Base Sepolia; this selector simulates Solana devnet, and an actual Solana settlement adapter is the next integration.”
+**1:45 — Economics and Solana.** Use the cost calculator to compare a $0.02 judgment on a $0.001 task and a $10 task. “The acceptance layer should use the cheapest sufficient evidence. The next blockchain version will be Solana devnet only. This playground simulates that target; the earlier Base Sepolia experiment is archived history.”
 
 ## Backup paths
 
@@ -24,7 +24,7 @@ Open the public demo or run `pnpm dev:dashboard` and open http://localhost:4022.
 - Asked about code execution: the demo tests a bounded declarative operation language, not arbitrary JavaScript.
 - Asked about proofs: hashes bind artifacts, but do not establish truth or prove which model ran.
 - Asked about metrics: fixture scores and cost assumptions are illustrative; no measured accuracy, cost benchmark, or adoption claim is presented.
-- Asked about real payments: the About page links to historical Base Sepolia evidence and the preserved `/testnet` dashboard. No new chain transaction was made in this build.
+- Asked about real payments: the About page links to historical Base Sepolia evidence and the archived `/archive/base-sepolia` dashboard; `/testnet` describes the Solana-only integration. No new chain transaction was made in this build.
 
 ## The decisions worth discussing
 

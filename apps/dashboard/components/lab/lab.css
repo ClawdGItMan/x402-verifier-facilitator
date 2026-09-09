@@ -1070,6 +1070,7 @@
   justify-content: space-between;
   gap: 60px;
 }
+.vf-section-intro h1,
 .vf-section-intro h2 {
   font-size: 44px;
   font-weight: 550;
@@ -1479,6 +1480,7 @@
   .vf-footer a {
     display: none;
   }
+  .vf-section-intro h1,
   .vf-section-intro h2 {
     font-size: 35px;
   }
@@ -1706,6 +1708,7 @@
     display: block;
     padding: 38px 0 28px;
   }
+  .vf-section-intro h1,
   .vf-section-intro h2 {
     font-size: 34px;
   }
@@ -1788,4 +1791,13 @@
   .vf-quick-run {
     padding: 7px 10px;
   }
+}
+
+.vf-testnet-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--vf-teal);
+  margin-top: 16px;
+  font-size: 12px;
 }

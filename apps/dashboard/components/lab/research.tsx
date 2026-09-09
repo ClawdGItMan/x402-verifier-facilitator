@@ -365,9 +365,10 @@ export function ProjectNotes() {
             policy can stay consistent while the payment adapter changes.
           </p>
           <p>
-            This demo simulates Solana devnet and Base Sepolia. The original
-            wallet integration is Base Sepolia only; switching the demo selector
-            does not submit a Solana transaction.
+            The current demo and planned testnet integration target Solana
+            devnet only. Payments are simulated today; a live Solana transaction
+            will require the settlement integration. The earlier Base Sepolia
+            work is archived as historical evidence.
           </p>
           <a
             href="https://docs.x402.org/core-concepts/network-and-token-support"
@@ -376,7 +377,10 @@ export function ProjectNotes() {
           >
             x402 network documentation <ArrowUpRight size={14} />
           </a>
-          <h3>The original testnet path</h3>
+          <a className="vf-testnet-link" href="/testnet">
+            Solana devnet integration status <ArrowUpRight size={14} />
+          </a>
+          <h3>The archived Base prototype</h3>
           <p>
             The repository records four Base Sepolia settlements from April 23,
             2026. The original facilitator used a seller-triggered judge and
@@ -390,8 +394,8 @@ export function ProjectNotes() {
           >
             Recorded Base Sepolia transaction <ArrowUpRight size={14} />
           </a>
-          <a className="vf-testnet-link" href="/testnet">
-            Open original testnet dashboard <ArrowUpRight size={14} />
+          <a className="vf-testnet-link" href="/archive/base-sepolia">
+            View archived Base dashboard <ArrowUpRight size={14} />
           </a>
           <p className="vf-micro">
             Requires local services, a funded test wallet and explicit

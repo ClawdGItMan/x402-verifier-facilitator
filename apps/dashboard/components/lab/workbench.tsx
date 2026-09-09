@@ -30,9 +30,6 @@ export function Workbench() {
     JSON.stringify(scenario.presets[0]!.output, null, 2),
   );
   const [policy, setPolicy] = useState<Policy>("stepped");
-  const [network, setNetwork] = useState<"solana-devnet" | "base-sepolia">(
-    "solana-devnet",
-  );
   const [amount, setAmount] = useState("0.05");
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [busy, setBusy] = useState(false);
@@ -80,7 +77,7 @@ export function Workbench() {
     task,
     artifact,
     policy,
-    network,
+    network: "solana-devnet",
     amount: Number(amount),
     judgeMode: live ? "live" : "fixture",
   };
@@ -181,28 +178,15 @@ export function Workbench() {
           <span className="vf-muted">Change the work. Watch the decision.</span>
         </div>
         <div className="vf-toolbar-controls">
-          <label className="vf-network">
-            <span
-              className={
-                network === "solana-devnet" ? "vf-solana-mark" : "vf-base-mark"
-              }
-            >
-              {network === "solana-devnet" ? "≋" : "●"}
-            </span>
-            <select
-              aria-label="Simulated payment network"
-              value={network}
-              disabled={busy}
-              onChange={(e) => {
-                setNetwork(e.target.value as typeof network);
-                clear();
-              }}
-            >
-              <option value="solana-devnet">Solana devnet · simulated</option>
-              <option value="base-sepolia">Base Sepolia · simulated</option>
-            </select>
-            <ChevronDown size={13} />
-          </label>
+          <a
+            className="vf-network"
+            href="/testnet"
+            aria-label="Solana devnet integration status"
+          >
+            <span className="vf-solana-mark">≋</span>
+            <span>Solana devnet · simulated</span>
+            <ArrowUpRight size={13} />
+          </a>
           <button
             className="vf-primary vf-quick-run"
             disabled={

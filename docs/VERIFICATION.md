@@ -2,7 +2,7 @@
 
 ## Automated
 
-- `pnpm test`: **47 passed, 0 failed**. Covers all seven task families, field/source disagreement, malformed schemas, extra fields, fractional code-test failures, edited subjective artifacts, instruction-injection holds, confidence/panel disagreement, exact rubric identities, unrounded thresholds, invalid model output, provider failure, authorization, request-size limits, receipt binding, tampering, expiry, replay, dispute deadlines, reviewer rationale, and terminal states.
+- `pnpm test`: **48 passed, 0 failed**. Covers all seven task families, field/source disagreement, malformed schemas, extra fields, fractional code-test failures, edited subjective artifacts, instruction-injection holds, confidence/panel disagreement, exact rubric identities, unrounded thresholds, invalid model output, provider failure, authorization, request-size limits, receipt binding, tampering, expiry, replay, dispute deadlines, reviewer rationale, and terminal states.
 - `pnpm typecheck`: **passed** across all six TypeScript project configurations.
 - `pnpm build`: **passed** with Next.js 16.2.4 and Webpack. Vercel's production build also completed successfully.
 - `git diff --check`: **passed**.
@@ -19,7 +19,7 @@
 - Export receipt: downloaded valid JSON with hashes and event history; authentication token is excluded.
 - All research categories and the interview walkthrough rendered and navigated.
 - At 390 × 844: the mobile flow released a simulated payment, layout stacked correctly, and document width equaled viewport width (390 px), with no horizontal overflow.
-- Original `/testnet` view rendered with the facilitator and event stream online; seller service and wallets were intentionally unconfigured. Its expected offline seller requests produced console errors. No payment was attempted.
+- Original view (now `/archive/base-sepolia`) rendered with the facilitator and event stream online; seller service and wallets were intentionally unconfigured. Its expected offline seller requests produced console errors. No payment was attempted.
 - Legacy `/settle` returned `work_verification_required` by default without forwarding a request upstream.
 - Playground browser console: **0 errors**. Development-only font preload warnings were observed.
 
@@ -41,4 +41,8 @@ Screenshots and browser receipt are retained locally in `output/playwright/` (ig
 - Multi-judge votes and public semantic scores are authored examples, not live calls, measured accuracy, or a calibrated probability estimate.
 - Ledger state, authentication keys, and replay protection are temporary and process-local. Another instance or server restart fails closed. This requires a durable shared ledger before real-money use.
 - The manual review controls are an explicitly labeled role-play. Identity, arbitration, bonds, escrow, learned metrics, ZK/TEE, on-chain reputation, and streaming integrations are not claimed as implemented.
-- Legacy wallet dependencies still emit optional-module build warnings for MetaMask React Native storage, `pino-pretty`, and a dynamic `ox` import. They do not prevent the production build; wallet modules are isolated to `/testnet`.
+- Legacy wallet dependencies still emit optional-module build warnings for MetaMask React Native storage, `pino-pretty`, and a dynamic `ox` import. They do not prevent the production build; wallet modules are isolated to `/archive/base-sepolia`.
+
+## Solana-only follow-up
+
+The active API now rejects Base Sepolia and every network except `solana-devnet`. `/testnet` is the Solana integration-status page; the prior Base wallet view is archived at `/archive/base-sepolia`. The additional API boundary test passes for Base, EVM network IDs, mainnet and unrelated chains. Live Solana settlement is still an integration requirement, not an implemented claim.

@@ -4,7 +4,7 @@ An interactive research prototype for checking an agent's work **before** releas
 
 [**Open the interactive demo**](https://x402-verifier-lab.vercel.app) · [Interview walkthrough](docs/INTERVIEW.md)
 
-**September 2026:** the new verification lab is active. The original Base Sepolia wallet prototype is preserved at `/testnet`.
+**September 2026:** the new verification lab is active. The active demo and next testnet integration target **Solana devnet only**. `/testnet` shows that integration status; the earlier Base prototype is archived at `/archive/base-sepolia`.
 
 ## Run the demo
 
@@ -25,7 +25,7 @@ Open [localhost:4022](http://localhost:4022). No wallet, API key, facilitator pr
 - **Review and recourse:** a 20-second simulated challenge window and explicitly labeled reviewer role-play. A dispute freezes payment before release. Bond amounts are illustrative; none are collected.
 - **Research reference:** 15 approaches across work quality, identity/provenance/trust, and timing, with implementation status and limits. Includes a verification-cost calculator and interview walkthrough.
 
-The demo's network selector is a **simulation** of Solana devnet or Base Sepolia. No funds move, no transaction is broadcast, no escrow is deployed, and the simulated payment ID is never presented as an explorer transaction.
+The demo is a **Solana devnet simulation**. The active API rejects other networks. No funds move, no transaction is broadcast, no escrow is deployed, and the simulated payment ID is never presented as an explorer transaction.
 
 ## Important boundaries
 
@@ -72,12 +72,13 @@ flowchart LR
 | `apps/dashboard/components/lab` | Workbench, flow, receipt, reference guide, economics |
 | `apps/dashboard/lib/verification` | Task contracts, deterministic checks, judge policies, live adapter, demo ledger |
 | `apps/dashboard/app/api/lab` | Validated verify/settle commands in one server route |
-| `apps/dashboard/app/testnet` | Original wallet dashboard, with isolated wallet providers |
+| `apps/dashboard/app/testnet` | Solana-only integration status and requirements |
+| `apps/dashboard/app/archive/base-sepolia` | Historical wallet dashboard, with isolated wallet providers |
 | `apps/facilitator` | Original Express proxy and summarization judge; unverified settlement blocked by default |
 | `apps/demo-service` | Original paid weather and summary endpoints |
 | `apps/buyer-agent`, `packages/agent-pay` | Original Base Sepolia buyer tooling |
 
-## Original Base Sepolia path
+## Archived Base Sepolia path
 
 The historical integration used real testnet USDC and an upstream `x402.org` facilitator. The seller called `/judge`, but `/settle` was a payment-only proxy. A judge approval was therefore **not an independently enforced quality gate**. The new lab demonstrates that policy boundary without claiming the historical integration already had it.
 
@@ -87,7 +88,7 @@ To deliberately reproduce the old baseline locally, configure the test wallet, s
 pnpm dev:all
 ```
 
-Open `/testnet`. The baseline settlement route is restricted to Base Sepolia and is blocked by default. The weather endpoint has no work judge. The summarization seller-side judge remains available with an Anthropic key. Standalone `/judge` approvals are now logged as `approved`, not `settled`.
+Open `/archive/base-sepolia`. The archived baseline settlement route is restricted to Base Sepolia and is blocked by default. The weather endpoint has no work judge. The summarization seller-side judge remains available with an Anthropic key. Standalone `/judge` approvals are now logged as `approved`, not `settled`.
 
 Recorded transactions from April 23, 2026 (historical repository evidence; not rerun for this demo):
 
@@ -110,11 +111,11 @@ See [verification record](docs/VERIFICATION.md), [two-minute interview walkthrou
 
 The production build uses Webpack with `.js` → TypeScript extension aliases for the original NodeNext workspace packages. Existing optional wallet-dependency warnings are isolated to the legacy dashboard.
 
-## Next integration steps
+## Next integration steps — Solana devnet only
 
 1. Authenticate and sign the buyer's exact acceptance contract, payee, artifact commitment, amount, network, and expiry.
 2. Replace the demo ledger with transactional shared storage and idempotent settlement reconciliation.
-3. Connect a supported x402 Solana adapter and validate new devnet settlements with explorer evidence.
+3. Build the live version exclusively for Solana devnet and validate new settlements with explorer evidence; no EVM fallback. See [Solana testnet direction](docs/SOLANA-TESTNET.md).
 4. Add real independent model providers, calibrated labeled evaluations, authenticated arbitration and an explicit escrow/hold design for disputes.
 5. Evaluate learned metrics, verifiable execution, reputation, and streaming only where the task requires them.
 

@@ -11,7 +11,7 @@ export const requestSchema = z
     task: z.enum(taskIds),
     artifact: z.string().min(1).max(12000),
     policy: z.enum(["stepped", "schema", "judge", "consensus", "optimistic"]),
-    network: z.enum(["solana-devnet", "base-sepolia"]),
+    network: z.literal("solana-devnet"),
     amount: z.number().finite().min(0.001).max(1000),
     judgeMode: z.enum(["fixture", "live"]).default("fixture"),
   })
