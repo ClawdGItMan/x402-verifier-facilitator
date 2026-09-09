@@ -57,7 +57,7 @@ export interface AppendArgs {
   input: unknown;
   output: unknown;
   judge_result: JudgeResult;
-  outcome: "settled" | "rejected" | "error";
+  outcome: "approved" | "settled" | "rejected" | "error";
   error?: string | null;
 }
 

@@ -8,6 +8,9 @@ import { loadRootEnv } from "../env";
 export const dynamic = "force-dynamic";
 
 export async function POST() {
+  if (process.env.NODE_ENV === "production") {
+    return Response.json({ error: "Server-wallet payments are disabled on public deployments. Use the local testnet dashboard." }, { status: 403 });
+  }
   loadRootEnv();
   const encoder = new TextEncoder();
   const stream = new TransformStream<Uint8Array, Uint8Array>();

@@ -1,5 +1,4 @@
-import { TransactionDashboard } from "./transaction-dashboard";
-
+import { VerificationLab } from "../components/lab/verification-lab";
 export default function Page() {
-  return <TransactionDashboard />;
+  return <VerificationLab />;
 }

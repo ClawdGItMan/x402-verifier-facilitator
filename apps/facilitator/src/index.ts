@@ -49,6 +49,14 @@ app.post("/verify", (req, res) => {
 });
 
 app.post("/settle", (req, res) => {
+  if (process.env.ALLOW_UNVERIFIED_TESTNET_SETTLEMENT !== "true") {
+    res.status(403).json({ success: false, errorReason: "work_verification_required", message: "This legacy proxy does not enforce work quality. Use the verification lab, or explicitly opt into the unverified testnet baseline locally with ALLOW_UNVERIFIED_TESTNET_SETTLEMENT=true." });
+    return;
+  }
+  if (req.body?.paymentRequirements?.network !== "eip155:84532") {
+    res.status(403).json({ success: false, errorReason: "testnet_only", message: "The legacy baseline is restricted to Base Sepolia." });
+    return;
+  }
   void proxyToUpstream("settle", req, res);
 });
 
@@ -82,7 +90,7 @@ app.post("/judge", async (req, res) => {
       input,
       output,
       judge_result: result,
-      outcome: result.pass ? "settled" : "rejected"
+      outcome: result.pass ? "approved" : "rejected"
     });
 
     emitFacilitatorEvent({

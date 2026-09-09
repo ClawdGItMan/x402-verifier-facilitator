@@ -1,134 +1,125 @@
-# Verifier Facilitator x402
+# Verifier — Good work. Then payment.
 
-An x402 payment facilitator that puts an LLM-as-judge quality check between an agent paying for work and the payment settling. If the work is bad, the payment does not settle.
+An interactive research prototype for checking an agent's work **before** releasing an x402 payment. The default app is a wallet-free demonstration: visitors edit deliverables, run verification, and see payment released, blocked, held, or disputed.
 
-## Status (September 2026)
+[**Open the interactive demo**](https://x402-verifier-lab.vercel.app) · [Interview walkthrough](docs/INTERVIEW.md)
 
-**V1 prototype. Stalled on 2026-04-29. Not maintained.**
+**September 2026:** the new verification lab is active. The original Base Sepolia wallet prototype is preserved at `/testnet`.
 
-What actually works, as of the last commit:
+## Run the demo
 
-- Four real settlements on Base Sepolia (testnet USDC) through the full path: buyer agent → paid demo service → this facilitator → upstream `x402.org` facilitator → chain. Transaction hashes are listed below.
-- A browser dashboard that connects a wallet, funds an agent wallet with test USDC, runs a paid request in either manual-wallet or agent-wallet mode, and shows each hop of the payment path live.
-- One judge rubric (summarization) out of the seven task types the design called for. The judge scores four dimensions with Claude, returns a 0–100 score, and passes at 70 or above. The demo service's `POST /summarize` route calls the judge before returning; a failed verdict returns HTTP 402 and the payment is not settled. A `mode: "bad"` flag on the request forces a deliberately poor summary so you can watch it get rejected.
-- Every judge call is logged to a local SQLite file with score, model, latency and cost.
+```bash
+pnpm install
+pnpm dev:dashboard
+```
 
-What does not work, honestly:
+Open [localhost:4022](http://localhost:4022). No wallet, API key, facilitator process, or blockchain connection is needed. Node 22 is used for deployment; pnpm 10.23.0 is pinned.
 
-- The judge runs as a separate `/judge` endpoint that the *seller* calls. The facilitator's own `/verify` and `/settle` routes are still plain pass-through proxies to `x402.org`. Wiring the verdict into the settle path itself was the next session and never happened.
-- Six of the seven rubrics were never written. The `/weather` demo route has no quality check at all.
-- The original plan targeted 70 scripted transactions and a demo to Circle's Arc developer-relations team. Neither happened.
+## What you can demonstrate
 
-### What I learned
+- **Seven task families:** invoice extraction, code behavior, summarization, translation, product copy, research recommendations, and an acceptance contract.
+- **Real deterministic checks:** JSON parsing, strict schema validation, source/reference comparison, length and quantity constraints, and buyer-owned test vectors for a bounded operation language. The code example does not execute arbitrary JavaScript.
+- **Subjective evaluation:** labeled, authored example judgments for semantic tasks; an optional live Anthropic single-model adapter. Edited subjective text without a live evaluator is held, not given a fabricated score.
+- **Stepped policies:** deterministic-only, single judge, illustrative multi-judge consensus, uncertainty escalation, and optimistic dispute windows. Hard failures cannot be overridden by a high average score.
+- **Payment gate:** the server binds a receipt to the task, exact artifact, policy, amount, network, and expiry. It blocks tampering, early release, rejected/held/disputed payments, and repeated releases within the same process.
+- **Review and recourse:** a 20-second simulated challenge window and explicitly labeled reviewer role-play. A dispute freezes payment before release. Bond amounts are illustrative; none are collected.
+- **Research reference:** 15 approaches across work quality, identity/provenance/trust, and timing, with implementation status and limits. Includes a verification-cost calculator and interview walkthrough.
 
-Three things from the research that ran alongside this build ([Agentic Payments Research](https://github.com/ClawdGItMan/agentic-payments-research)), each of which cut against the reason I started it:
+The demo's network selector is a **simulation** of Solana devnet or Base Sepolia. No funds move, no transaction is broadcast, no escrow is deployed, and the simulated payment ID is never presented as an explorer transaction.
 
-1. **The judge does not pay for itself at micropayment scale.** An LLM evaluation costs $0.01–$0.15. The average x402 transaction was about $0.20. That makes verification 5–75% of the transaction value. The whole product is either a non-starter or trivial overhead depending on one number I do not control: whether agent transactions grow past roughly $5.
-2. **The rail I built on had no organic demand yet.** x402 daily transactions fell 92% from their December 2025 peak, and roughly half of what remained looked like wash or self-trading. Solana also quietly overtook Base on daily x402 volume while I was building on Base. A quality gate on a rail nobody is using is a solution with no queue.
-3. **Payment rails earn on throughput, and a quality gate reduces throughput.** Nobody whose revenue is volume wants to be the party that says "this doesn't settle." That is the structural reason the verification layer stays empty, and it makes a third-party facilitator a hard *business*, not just a hard build. I had treated it as a build problem.
+## Important boundaries
 
-## Why this exists
+The public lab is a simulator, not a production payment service. Its ledger, authentication key, and replay protection are process-local and expire after ten minutes. A restart or a request routed to another process fails closed and asks the visitor to run verification again. Real settlement would require shared durable state, authenticated participants and reviewers, buyer-signed acceptance terms, and chain reconciliation.
 
-Every x402 facilitator verifies the **payment**: signature, nonce, on-chain settlement. None of them verify the **work**. For subjective agent tasks (writing, analysis, summarization) a valid signature is not enough; the paying agent needs some way to know the output was worth paying for. This repo was an attempt to build that gate as a drop-in facilitator, so a seller could point at it instead of `x402.org` and get quality-gated settlement without changing anything else.
+A digest identifies the reviewed artifact; it is **not** a proof that the output is true or that a particular model executed. Authored confidence and votes are illustrative. Live-model confidence is self-reported, not calibrated. Neither the example set nor the tests measure model accuracy.
+
+No public server-wallet payments are allowed. Production `/api/agent/weather` returns 403 even if a wallet key is present.
+
+## Optional live judge
+
+Copy `.env.example` to the repository-root `.env`, then set:
+
+```dotenv
+ANTHROPIC_API_KEY=<your server-side key>
+JUDGE_MODEL=claude-sonnet-4-6
+LAB_ENABLE_LIVE_JUDGE=true
+LAB_LIVE_JUDGE_TOKEN=<a long random access token>
+```
+
+Restart the dashboard. “Live judge access” appears in the deliverable panel. Enable it and enter the access token. The provider key never reaches the browser. This mode makes a paid provider request; it is disabled by default. No key is included in the project.
+
+The adapter uses a fixed rubric, bounded input, a 25-second timeout, exact named score dimensions, and strict response validation. Provider errors and malformed results never fall back to fixtures. Live cross-provider consensus is not configured: if the chosen policy requires a panel, work stays held. For deployment, set the same server environment variables on the hosting project.
 
 ## Architecture
 
 ```mermaid
-sequenceDiagram
-    participant Buyer as Buyer agent
-    participant Demo as Demo service (seller)
-    participant Fac as Verifier facilitator
-    participant Judge as Judge (Claude)
-    participant Up as x402.org facilitator
-    participant Base as Base Sepolia
-
-    Buyer->>Demo: POST /summarize
-    Demo-->>Buyer: 402 Payment Required (price, payTo, network)
-    Buyer->>Buyer: sign USDC payment authorization
-    Buyer->>Demo: POST /summarize + PAYMENT-SIGNATURE header
-    Demo->>Fac: POST /verify
-    Fac->>Up: POST /verify (pass-through)
-    Up-->>Fac: valid
-    Fac-->>Demo: valid
-    Demo->>Demo: generate summary
-    Demo->>Fac: POST /judge {task_type, input, output}
-    Fac->>Judge: score on 4 dimensions
-    Judge-->>Fac: JSON scores
-    Fac-->>Demo: {score, pass, cost_usd, latency_ms}
-    alt score >= 70
-        Demo->>Fac: POST /settle
-        Fac->>Up: POST /settle (pass-through)
-        Up->>Base: transfer USDC
-        Base-->>Up: tx hash
-        Up-->>Fac: settled
-        Fac-->>Demo: settled
-        Demo-->>Buyer: 200 {summary, judge}
-    else score < 70
-        Demo-->>Buyer: 402 quality_rejected (no settlement)
-    end
+flowchart LR
+  B[Buyer task and criteria] --> S[Seller deliverable]
+  S --> D[Parse, schema, source, constraints]
+  D -->|Objective task passes| G[Server payment gate]
+  D -->|Subjective criteria| J[Authored fixture or optional live judge]
+  J -->|Sufficient quality and confidence| G
+  J -->|Uncertain or disagreement| H[Hold for review]
+  D -->|Hard failure| R[Reject]
+  G -->|Immediate policy| P[Simulated release]
+  G -->|Optimistic policy| W[Challenge window]
+  W -->|Dispute| H
+  W -->|Uncontested deadline| P
 ```
 
-The repo is a pnpm monorepo:
-
-| Path | What it is |
+| Path | Responsibility |
 |---|---|
-| `apps/facilitator` | Express service. Proxies `/supported`, `/verify`, `/settle` to the upstream facilitator; hosts `/judge`; streams events over SSE for the dashboard; logs to SQLite. |
-| `apps/demo-service` | A paid seller. `GET /weather` (plain x402, no judge) and `POST /summarize` (Claude-generated summary, judged before return). |
-| `apps/buyer-agent` | Script that pays for `/weather` end to end from a test wallet. |
-| `apps/dashboard` | Next.js browser dashboard for watching the payment path with a real wallet. |
-| `packages/agent-pay` | Small wrapper around `@x402/fetch` that emits step-by-step events. |
-| `packages/shared` | Task types, judge result shape, pass/reject thresholds (70 / 40). |
+| `apps/dashboard/components/lab` | Workbench, flow, receipt, reference guide, economics |
+| `apps/dashboard/lib/verification` | Task contracts, deterministic checks, judge policies, live adapter, demo ledger |
+| `apps/dashboard/app/api/lab` | Validated verify/settle commands in one server route |
+| `apps/dashboard/app/testnet` | Original wallet dashboard, with isolated wallet providers |
+| `apps/facilitator` | Original Express proxy and summarization judge; unverified settlement blocked by default |
+| `apps/demo-service` | Original paid weather and summary endpoints |
+| `apps/buyer-agent`, `packages/agent-pay` | Original Base Sepolia buyer tooling |
 
-## Recorded settlements (Base Sepolia)
+## Original Base Sepolia path
 
-| Milestone | Date | Tx |
-|---|---|---|
-| First baseline x402 settlement via `x402.org` | 2026-04-23 | `0xc105ed89ed040dda01a7687dd12ba5b55782b38c3da4599e638d21e4a0ee0c4f` |
-| First settlement through this facilitator as middleman | 2026-04-23 | `0x15d2a919fa77b368be9f062b4f3028d1df41edf75e0c81ba54e1dbda3db27c5c` |
-| First dashboard-triggered agent settlement | 2026-04-23 | `0xfbe369e796f6e6c66a936039feae77b731e9f0a82d6c51871eb23aa71decd4e5` |
-| Latest browser-verified dashboard run | 2026-04-23 | `0x17de059f92990c9832363fe9fa7b04d181898a3e680aa9d1ba75493f27ad3744` |
+The historical integration used real testnet USDC and an upstream `x402.org` facilitator. The seller called `/judge`, but `/settle` was a payment-only proxy. A judge approval was therefore **not an independently enforced quality gate**. The new lab demonstrates that policy boundary without claiming the historical integration already had it.
 
-Look them up on [sepolia.basescan.org](https://sepolia.basescan.org).
-
-## How to run
-
-Prerequisites: Node 20+, a Base Sepolia wallet with testnet USDC ([faucet.circle.com](https://faucet.circle.com)) and a little Base Sepolia ETH for gas, and an Anthropic API key for the judge and the summarizer.
+To deliberately reproduce the old baseline locally, configure the test wallet, seller address and local services from `.env.example`, set `ALLOW_UNVERIFIED_TESTNET_SETTLEMENT=true`, and run:
 
 ```bash
-npx pnpm@10.23.0 install
-cp .env.example .env
-npx pnpm@10.23.0 wallet:generate     # prints a fresh test wallet
+pnpm dev:all
 ```
 
-Put the generated key in `.env` as `EVM_PRIVATE_KEY`, set `SELLER_EVM_ADDRESS` to any address you control, set `ANTHROPIC_API_KEY`, then fund the buyer address.
+Open `/testnet`. The baseline settlement route is restricted to Base Sepolia and is blocked by default. The weather endpoint has no work judge. The summarization seller-side judge remains available with an Anthropic key. Standalone `/judge` approvals are now logged as `approved`, not `settled`.
+
+Recorded transactions from April 23, 2026 (historical repository evidence; not rerun for this demo):
+
+| Milestone | Transaction |
+|---|---|
+| First baseline | [0xc105…0c4f](https://sepolia.basescan.org/tx/0xc105ed89ed040dda01a7687dd12ba5b55782b38c3da4599e638d21e4a0ee0c4f) |
+| Facilitator as middleman | [0x15d2…27c5c](https://sepolia.basescan.org/tx/0x15d2a919fa77b368be9f062b4f3028d1df41edf75e0c81ba54e1dbda3db27c5c) |
+| Dashboard-triggered | [0xfbe3…cd4e5](https://sepolia.basescan.org/tx/0xfbe369e796f6e6c66a936039feae77b731e9f0a82d6c51871eb23aa71decd4e5) |
+| Browser-verified baseline | [0x17de…d3744](https://sepolia.basescan.org/tx/0x17de059f92990c9832363fe9fa7b04d181898a3e680aa9d1ba75493f27ad3744) |
+
+## Verify and present
 
 ```bash
-npx pnpm@10.23.0 dev:all             # facilitator :4020, demo service :4021, dashboard :4022
+pnpm test
+pnpm typecheck
+pnpm build
 ```
 
-Open `http://localhost:4022`. Or, without the browser:
+See [verification record](docs/VERIFICATION.md), [two-minute interview walkthrough](docs/INTERVIEW.md), and [research-to-demo map](docs/RESEARCH-MAP.md).
 
-```bash
-npx pnpm@10.23.0 dev:facilitator     # terminal 1
-npx pnpm@10.23.0 dev:demo            # terminal 2
-npx pnpm@10.23.0 tx:baseline         # terminal 3: pays for /weather, prints the settlement
-```
+The production build uses Webpack with `.js` → TypeScript extension aliases for the original NodeNext workspace packages. Existing optional wallet-dependency warnings are isolated to the legacy dashboard.
 
-To exercise the judge directly:
+## Next integration steps
 
-```bash
-curl -X POST localhost:4021/summarize \
-  -H 'content-type: application/json' \
-  -d '{"source":"<long text>","max_length":300,"mode":"bad"}'
-# -> 402 quality_rejected, with the judge's per-dimension scores
-```
+1. Authenticate and sign the buyer's exact acceptance contract, payee, artifact commitment, amount, network, and expiry.
+2. Replace the demo ledger with transactional shared storage and idempotent settlement reconciliation.
+3. Connect a supported x402 Solana adapter and validate new devnet settlements with explorer evidence.
+4. Add real independent model providers, calibrated labeled evaluations, authenticated arbitration and an explicit escrow/hold design for disputes.
+5. Evaluate learned metrics, verifiable execution, reputation, and streaming only where the task requires them.
 
-(The first call returns a 402 payment challenge; the buyer-agent and dashboard handle the signing. `scripts/SETUP.md` has the longer walkthrough.)
+## Sources and license
 
-## Built with AI
+Protocol framing checked against the [x402 facilitator documentation](https://docs.x402.org/core-concepts/facilitator), [network support](https://docs.x402.org/core-concepts/network-and-token-support), and [UMA optimistic oracle design](https://docs.uma.xyz/protocol-overview/how-does-umas-oracle-work). These are references, not integrations or endorsements.
 
-I do not write code by hand. The design, session plan and rubric definitions were written first as documents; Claude Code built the monorepo from them across roughly six sessions in April 2026, and I judged progress by whether test transactions settled on chain. `CLAUDE.md` is the agent's working brief.
-
-## License
-
-[MIT](LICENSE).
+Built with AI assistance from a research-led product specification. [MIT](LICENSE).

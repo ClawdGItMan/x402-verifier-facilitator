@@ -8,6 +8,9 @@ import { loadRootEnv } from "../env";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ configured: false, address: null, error: "Server-wallet payments are local-only." });
+  }
   loadRootEnv();
   const privateKey = process.env.EVM_PRIVATE_KEY;
 

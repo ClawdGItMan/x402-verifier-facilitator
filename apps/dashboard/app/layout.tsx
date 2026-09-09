@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 
-import { Providers } from "./providers";
-
 import "./globals.css";
 
 const inter = Inter({
@@ -18,15 +16,16 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Verifier Facilitator x402",
-  description: "Browser wallet dashboard for x402 transaction visualization"
+  title: "Verifier — Good work. Then payment.",
+  description: "An interactive laboratory for verifying agent work before x402 payment: schema checks, LLM judging, consensus, and disputes. No wallet required.",
+  openGraph: { title: "Verifier — Good work. Then payment.", description: "Explore how agents can verify work before releasing payment. An interactive x402 research prototype.", type: "website" }
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${inter.variable} ${mono.variable}`}>
       <body>
-        <Providers>{children}</Providers>
+        {children}
       </body>
     </html>
   );

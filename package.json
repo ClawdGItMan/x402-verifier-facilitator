@@ -11,7 +11,9 @@
     "dev:all": "concurrently -n facilitator,demo,dashboard -c cyan,green,magenta \"npx pnpm@10.23.0 dev:facilitator\" \"npx pnpm@10.23.0 dev:demo\" \"npx pnpm@10.23.0 dev:dashboard\"",
     "tx:baseline": "tsx apps/buyer-agent/src/index.ts",
     "wallet:generate": "tsx apps/buyer-agent/src/generate-wallet.ts",
-    "typecheck": "tsc --noEmit -p packages/shared/tsconfig.json && tsc --noEmit -p packages/agent-pay/tsconfig.json && tsc --noEmit -p apps/facilitator/tsconfig.json && tsc --noEmit -p apps/demo-service/tsconfig.json && tsc --noEmit -p apps/buyer-agent/tsconfig.json && tsc --noEmit -p apps/dashboard/tsconfig.json"
+    "typecheck": "tsc --noEmit -p packages/shared/tsconfig.json && tsc --noEmit -p packages/agent-pay/tsconfig.json && tsc --noEmit -p apps/facilitator/tsconfig.json && tsc --noEmit -p apps/demo-service/tsconfig.json && tsc --noEmit -p apps/buyer-agent/tsconfig.json && tsc --noEmit -p apps/dashboard/tsconfig.json",
+    "test": "tsx --test tests/*.test.ts",
+    "build": "pnpm --filter @verifier-facilitator/dashboard build"
   },
   "devDependencies": {
     "@types/express": "^5.0.5",

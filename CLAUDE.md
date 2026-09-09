@@ -2,6 +2,15 @@
 
 This is the **code project** for a third-party x402 facilitator that injects LLM-as-judge work-quality verification between `/verify` and `/settle`. V1 targets Base Sepolia; V2 targets Circle Arc.
 
+## September 2026 current status
+
+The default app is now a wallet-free verification laboratory. Read `README.md`, `docs/VERIFICATION.md`, and `docs/INTERVIEW.md` for the current implementation and demonstrated boundaries. The April plan below is historical context, not the current product scope.
+
+- Public lab: `apps/dashboard/components/lab`, `lib/verification`, and `/api/lab`; real deterministic checks, explicitly authored model fixtures, optional live Anthropic adapter, and simulated payment receipts.
+- Original wallet view: `/testnet`; never describe it as live Solana or independently quality-gated settlement. The baseline `/settle` proxy is blocked unless explicitly opted into and restricted to Base Sepolia.
+- Do not log a judge approval as a settlement or present artifact hashes as provenance proofs.
+- Tests: `pnpm test`, `pnpm typecheck`, `pnpm build`. Webpack extension aliases preserve original NodeNext `.js` imports.
+
 ## Read this first
 
 All strategic context, research, and the comprehensive implementation plan live in the Obsidian research vault next door:

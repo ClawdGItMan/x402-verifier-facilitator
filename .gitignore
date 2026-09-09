@@ -10,3 +10,7 @@ test-results/
 !.env.example
 *.log
 .DS_Store
+.vercel/
+output/playwright/
+data/
+.vercel

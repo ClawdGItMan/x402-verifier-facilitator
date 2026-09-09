@@ -48,7 +48,7 @@ export interface TransactionLog {
   rubric_version: string;
   latency_ms: number;
   cost_usd: number;
-  outcome: "settled" | "rejected" | "error";
+  outcome: "approved" | "settled" | "rejected" | "error";
   error: string | null;
   judge_result_json: string;
 }
