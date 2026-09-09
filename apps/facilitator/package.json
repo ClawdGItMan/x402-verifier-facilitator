@@ -1,0 +1,18 @@
+{
+  "name": "@verifier-facilitator/facilitator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.91.1",
+    "@verifier-facilitator/shared": "workspace:*",
+    "better-sqlite3": "^12.9.0",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "uuid": "^14.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/uuid": "^11.0.0"
+  }
+}

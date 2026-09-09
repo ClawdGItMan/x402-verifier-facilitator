@@ -1,0 +1,15 @@
+{
+  "name": "@verifier-facilitator/buyer-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@verifier-facilitator/agent-pay": "workspace:*",
+    "@verifier-facilitator/shared": "workspace:*",
+    "@x402/core": "^2.10.0",
+    "@x402/evm": "^2.10.0",
+    "@x402/fetch": "^2.10.0",
+    "dotenv": "^17.2.3",
+    "viem": "^2.41.2"
+  }
+}
